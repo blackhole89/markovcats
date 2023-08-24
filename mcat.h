@@ -25,7 +25,7 @@ struct Obj {
 struct Mor {
     virtual Obj* dom()=0;
     virtual Obj* cod()=0;
-    virtual Mor* cond(std::vector<Obj*> os)=0;
+    virtual Mor* cond(int n)=0; //switch n last tensees of cod into dom
     virtual Mor* compose(Mor* other)=0;
     virtual Mor* tensor(Mor *other)=0;
 
@@ -121,7 +121,41 @@ struct FinStochMor : public Mor {
 
     virtual FinStochObj* dom() { return o_dom; }
     virtual FinStochObj* cod() { return o_cod; }
-    virtual FinStochMor* cond(std::vector<Obj*> os) {};
+    virtual FinStochMor* cond(int n) {
+        FinStochMor *ret = new FinStochMor();
+
+        ret->o_dom = new FinStochObj(*o_dom);
+        ret->o_cod = new FinStochObj(*o_cod);
+        ret->o_dom->sizes.insert(ret->o_dom->sizes.end(), o_cod->sizes.end()-n, o_cod->sizes.end());
+        ret->o_cod->sizes.resize(o_cod->sizes.size() - n);
+        ret->data = zeros(ret->o_dom->total_dim(), ret->o_cod->total_dim());
+
+        int adim = o_dom->total_dim();
+        int bdim = ret->o_dom->total_dim()/adim;
+        int cdim = ret->o_cod->total_dim();
+        printf("dims: %d %d %d\n", adim,bdim,cdim); fflush(stdout);
+
+        for(int a=0;a<adim;++a) {
+            for(int b=0;b<bdim;++b) {
+                double csum = 0.0;
+                for(int c=0;c<cdim;++c) {
+                    csum += data(a, bdim*c+b);
+                }
+                if(csum==0.0) {
+                    // avoid divide-by-zero when all are 0
+                    for(int c=0;c<cdim;++c) {
+                        ret->data(bdim*a+b, c) = 1.0/cdim;
+                    }
+                } else {
+                    for(int c=0;c<cdim;++c) {
+                        ret->data(bdim*a+b, c) = data(a, bdim*c+b)/csum;
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
     virtual FinStochMor* compose(Mor* other) {
         if(!other->dom()->is_equal(cod())) return NULL;
 

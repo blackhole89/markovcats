@@ -1,4 +1,5 @@
 #include "mcat.h"
+#include "finstoch.h"
 
 Mor* ibf(Mor *f0, Mor* f, Mor *g, std::vector<Mor*> ys)
 {
@@ -14,6 +15,7 @@ Mor* ibf(Mor *f0, Mor* f, Mor *g, std::vector<Mor*> ys)
         Mor *yn = ys.back();
         ys.pop_back();
         Mor *prev = ibf(f0,f,g,ys);
+        prev->debug_print();
         Mor *inner = prev->compose(
                        f->compose(
                           f->cod()->copy_n(2)->compose(
@@ -39,7 +41,7 @@ int main(int argc, char* argv[])
     g->debug_print();
 
     FinStochMor *f0 = two->det_const({0});
-    g->debug_print();
+    f0->debug_print();
 
     srand((unsigned)time(NULL));
     std::vector<Mor*> states;
@@ -55,7 +57,7 @@ int main(int argc, char* argv[])
     printf("\n");
 
     FinStochMor *m = (FinStochMor*)ibf(f0,f,g,states);
-    m->debug_print();
+    //m->debug_print();
 
     return 0;
 }

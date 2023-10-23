@@ -1,4 +1,5 @@
 #include "mcat.h"
+#include "finstoch.h"
 
 int main(int argc, char* argv[])
 {

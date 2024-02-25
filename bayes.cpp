@@ -1,20 +1,26 @@
 #include "mcat.h"
 #include "finstoch.h"
 
+// instantiated Bayes filter
+// f0: distribution of starting state
+// f: transition morphism
+// g: observation morphism
+// ys: vector of (deterministic) morphisms from terminal, pointing at observations
+// the construction closely follows the paper
 Mor* ibf(Mor *f0, Mor* f, Mor *g, std::vector<Mor*> ys)
 {
     if(ys.size()==1) {
         // base case
-        Mor *y1 = ys.back();
+        Mor *y1 = ys.back(); // last observation = only observation
         Mor *inner =  f0->compose(
                         f0->cod()->copy_n(2)->compose(
                            f0->cod()->id()->tensor(g) ));
         Mor *cond = inner->cond(1);
         return y1->compose(cond);
     } else {
-        Mor *yn = ys.back();
-        ys.pop_back();
-        Mor *prev = ibf(f0,f,g,ys);
+        Mor *yn = ys.back(); // take last observation...
+        ys.pop_back();       // ... remove it ...
+        Mor *prev = ibf(f0,f,g,ys); // ... and recursively construct the IBF for n-1 observations
         prev->debug_print();
         Mor *inner = prev->compose(
                        f->compose(
